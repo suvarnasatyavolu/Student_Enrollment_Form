@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Student Enrollment Form</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://login2explore.com/jpdb/resources/js/0.0.3/jpdb-commons.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Student Enrollment Form </h2>
+      <form id="stuForm" method="post">
+        <div class="form-group">
+          <label for="stuId">Roll-No:</label>
+          <input
+            type="text"
+            class="form-control"
+            onchange="getStu()"
+            name="stuId"
+            id="stuId"
+            placeholder="Enter Roll-No"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="stuName">Student Full Name:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="stuName"
+            placeholder="Enter Full Name"
+            name="stuName"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="stuClass">Class:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="stuClass"
+            placeholder="Enter Class"
+            name="stuClass"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="stuDOB">Birth-Date:</label>
+          <input
+            type="date"
+            class="form-control"
+            id="stuDOB"
+            name="stuDOB"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="stuAddress">Address:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="stuAddress"
+            placeholder="Enter Address"
+            name="stuAddress"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="stuEnrollDate">Enrollment-Date:</label>
+          <input
+            type="date"
+            class="form-control"
+            id="stuEnrollDate"
+            name="stuEnrollDate"
+          />
+        </div>
+
+        <button type="button" class="btn btn-success" onclick="saveData()">Save</button>
+        <button type="button" class="btn btn-warning" onclick="changeData()">Change</button>
+        <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+      </form>
+    </div>
+
+    <script>
+      const jpdbBaseURL = "http://api.login2explore.com:5577";
+      const jpdbIML = "/api/iml";
+      const jpdbIRL = "/api/irl";
+      const connToken = "90932512|-31949274757731994|90949158";
+      const stuDBName = "SCHOOL-DB";
+      const stuRelationName = "STUDENT-TABLE";
+
+      function resetForm() {
+        $("#stuId").val("");
+        $("#stuName").val("");
+        $("#stuClass").val("");
+        $("#stuDOB").val("");
+        $("#stuAddress").val("");
+        $("#stuEnrollDate").val("");
+        $("#stuId").focus();
+      }
+
+      function validateAndGetFormData() {
+        var stuId = $("#stuId").val();
+        var stuName = $("#stuName").val();
+        var stuClass = $("#stuClass").val();
+        var stuDOB = $("#stuDOB").val();
+        var stuAddress = $("#stuAddress").val();
+        var stuEnrollDate = $("#stuEnrollDate").val();
+
+        if (!stuId || !stuName || !stuClass || !stuDOB || !stuAddress || !stuEnrollDate) {
+          alert("All fields are required.");
+          return "";
+        }
+
+        return JSON.stringify({
+          stuId, stuName, stuClass, stuDOB, stuAddress, stuEnrollDate
+        });
+      }
+
+      function getStuIdJsonObj() {
+        var stuId = $("#stuId").val();
+        return JSON.stringify({ id: stuId });
+      }
+
+      function getStu() {
+        var getRequest = createGET_BY_KEYRequest(connToken, stuDBName, stuRelationName, getStuIdJsonObj());
+        jQuery.ajaxSetup({ async: false });
+        var resJsonObj = executeCommandAtGivenBaseUrl(getRequest, jpdbBaseURL, jpdbIRL);
+        jQuery.ajaxSetup({ async: true });
+
+        if (resJsonObj.status === 400) {
+          $("#stuName").focus();
+        } else if (resJsonObj.status === 200) {
+          fillData(resJsonObj);
+        }
+      }
+
+      function fillData(resJsonObj) {
+        var data = resJsonObj.data;
+        $("#stuId").val(data.stuId).prop("disabled", true);
+        $("#stuName").val(data.stuName);
+        $("#stuClass").val(data.stuClass);
+        $("#stuDOB").val(data.stuDOB);
+        $("#stuAddress").val(data.stuAddress);
+        $("#stuEnrollDate").val(data.stuEnrollDate);
+        localStorage.setItem("recno", resJsonObj.rec_no);
+      }
+
+      function saveData() {
+        var jsonStr = validateAndGetFormData();
+        if (!jsonStr) return;
+
+        var putReqStr = createPUTRequest("90934687|-31949205284143354|90956122",
+                        jsonStr, "STUDENT", "STU-REL");
+        jQuery.ajaxSetup({ async: false });
+        var resultObj = executeCommandAtGivenBaseUrl(putReqStr, jpdbBaseURL, jpdbIML);
+        jQuery.ajaxSetup({ async: true });
+
+        alert("Data saved successfully");
+        resetForm();
+      }
+
+      function changeData() {
+        var jsonStr = validateAndGetFormData();
+        if (!jsonStr) return;
+
+        var updateRequest = createUPDATERecordRequest(connToken, jsonStr, stuDBName, stuRelationName, localStorage.getItem("recno"));
+        jQuery.ajaxSetup({ async: false });
+        var resultObj = executeCommandAtGivenBaseUrl(updateRequest, jpdbBaseURL, jpdbIML);
+        jQuery.ajaxSetup({ async: true });
+
+        alert("Data updated successfully");
+        resetForm();
+      }
+    </script>
+  </body>
+</html>
